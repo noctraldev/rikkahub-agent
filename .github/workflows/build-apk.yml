@@ -3,6 +3,8 @@ name: Build APK
 on:
   workflow_dispatch:
   push:
+    branches:
+      - performance/smooth-ui-typing-animations
     tags:
       - 'v*'
 
@@ -65,6 +67,9 @@ jobs:
             echo "keyAlias=cikey" >> local.properties
             echo "keyPassword=ci_store_pass_9f3k" >> local.properties
           fi
+
+      - name: Run focused unit tests
+        run: ./gradlew :app:testDebugUnitTest
 
       - name: Gradle Build (release)
         run: |

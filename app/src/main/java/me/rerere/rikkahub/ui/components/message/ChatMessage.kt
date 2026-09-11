@@ -341,6 +341,14 @@ private fun MessagePartsBlock(
     val partsKey = parts.size.toString() + (parts.lastOrNull()?.hashCode()?.toString() ?: "")
     val groupedParts = remember(partsKey) { parts.groupMessageParts() }
     groupedParts.fastForEach { block ->
+        // Keep earlier reasoning/tool content in the same Compose slot while the tail text
+        // streams. This avoids rebuilding the expandable subtree for every token.
+        key(
+            when (block) {
+                is MessagePartBlock.ThinkingBlock -> "thinking"
+                is MessagePartBlock.ContentBlock -> "content-${block.index}"
+            }
+        ) {
         when (block) {
             is MessagePartBlock.ThinkingBlock -> {
                 if (block.steps.isNotEmpty()) {
@@ -397,7 +405,7 @@ private fun MessagePartsBlock(
                 }
             }
 
-            is MessagePartBlock.ContentBlock -> key(block.index) {
+            is MessagePartBlock.ContentBlock -> {
                 when (val part = block.part) {
                     is UIMessagePart.Text -> {
                         // A Text part may carry a `rikkahub.webview` metadata block
@@ -411,7 +419,7 @@ private fun MessagePartsBlock(
                         val textContent = @Composable {
                             if (role == MessageRole.USER) {
                                 Surface(
-                                    modifier = Modifier.animateContentSize(),
+                                    modifier = Modifier.then(if (loading) Modifier else Modifier.animateContentSize()),
                                     shape = RoundedCornerShape(16.dp),
                                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = settings.displaySetting.bubbleOpacity),
                                     onClick = { onUserMessageClick?.invoke() },
@@ -430,7 +438,7 @@ private fun MessagePartsBlock(
                             } else {
                                 if (settings.displaySetting.showAssistantBubble) {
                                     Surface(
-                                        modifier = Modifier.animateContentSize(),
+                                        modifier = Modifier.then(if (loading) Modifier else Modifier.animateContentSize()),
                                         shape = RoundedCornerShape(16.dp),
                                         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = settings.displaySetting.bubbleOpacity),
                                     ) {
@@ -453,8 +461,7 @@ private fun MessagePartsBlock(
                                             visual = true,
                                         ),
                                         onClickCitation = handleClickCitation,
-                                        modifier = Modifier
-                                            .animateContentSize()
+                                        modifier = Modifier.then(if (loading) Modifier else Modifier.animateContentSize())
                                     )
                                 }
                             }
@@ -677,6 +684,7 @@ private fun MessagePartsBlock(
             ) {
                 Text(stringResource(R.string.citations_count, annotations.size))
             }
+        }
         }
     }
 }

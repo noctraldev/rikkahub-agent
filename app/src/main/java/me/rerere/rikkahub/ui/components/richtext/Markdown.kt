@@ -243,7 +243,9 @@ fun MarkdownBlock(
     style: TextStyle = LocalTextStyle.current,
     onClickCitation: (String) -> Unit = {}
 ) {
-    var (data, setData) = remember { mutableStateOf(parseMarkdown(content)) }
+    // Keep parsing off the UI thread, including the first render. Long assistant messages
+    // should not block the composer or navigation while their AST is being prepared.
+    var data by remember { mutableStateOf<MarkdownParseResult?>(null) }
 
     // 监听内容变化，重新解析AST树
     // 这里在后台线程解析AST树, 防止频繁更新的时候掉帧
@@ -254,10 +256,13 @@ fun MarkdownBlock(
             .mapLatest { parseMarkdown(it) }
             .catch { exception -> Log.e(TAG, "MarkdownBlock: failed to parse markdown", exception) }
             .flowOn(Dispatchers.Default)
-            .collect { setData(it) }
+            .collect { data = it }
     }
 
-    if (data.hasHtml) {
+    val parsed = data
+    if (parsed == null) {
+        Text(text = content, modifier = modifier.padding(horizontal = 4.dp))
+    } else if (parsed.hasHtml) {
         MarkdownNew(
             content = content,
             modifier = modifier,
@@ -269,9 +274,9 @@ fun MarkdownBlock(
             Column(
                 modifier = modifier.padding(horizontal = 4.dp)
             ) {
-                data.astTree.children.fastForEach { child ->
+                parsed.astTree.children.fastForEach { child ->
                     MarkdownNode(
-                        node = child, content = data.preprocessed, onClickCitation = onClickCitation
+                        node = child, content = parsed.preprocessed, onClickCitation = onClickCitation
                     )
                 }
             }
