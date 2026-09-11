@@ -1444,6 +1444,8 @@
   <string name="setting_page_notifications_action_ago_hours">%1$dh ago</string>
   <string name="assistant_page_fast_path_router">Fast-path router</string>
   <string name="assistant_page_fast_path_router_desc">Skip the LLM for high-confidence requests like \"what\'s my battery\", \"what time is it\", or \"list workflows\". The matching tool runs directly and you get an instant answer. Conservative — anything ambiguous still goes to the model. Logged to logcat (tag: FastPathRouter).</string>
+  <string name="assistant_page_autonomous_mode">Autonomous execution</string>
+  <string name="assistant_page_autonomous_mode_desc">Continue one request through bounded tool steps without manually pressing continue. Remote mutations still require approval.</string>
   <string name="assistant_page_local_tools_skill_import_title">Skill import</string>
   <string name="assistant_page_local_tools_skill_import_desc">Let the assistant install skills from a URL OR from text it already has (e.g. fetched via SSH / curl / MCP for authenticated servers). Native, openclaw, and Hermes formats. Per-call approval required for every install (Always Allow is disabled — you review the source each time).</string>
   <string name="assistant_page_local_tools_js_skills_title">JS skills</string>

@@ -527,6 +527,18 @@ internal fun AssistantBasicContent(
             HorizontalDivider()
             FormItem(
                 modifier = Modifier.padding(8.dp),
+                label = { Text(stringResource(R.string.assistant_page_autonomous_mode)) },
+                description = { Text(stringResource(R.string.assistant_page_autonomous_mode_desc)) },
+                tail = {
+                    Switch(
+                        checked = assistant.autonomousModeEnabled,
+                        onCheckedChange = { onUpdate(assistant.copy(autonomousModeEnabled = it)) }
+                    )
+                }
+            )
+            HorizontalDivider()
+            FormItem(
+                modifier = Modifier.padding(8.dp),
                 label = {
                     Text(stringResource(R.string.assistant_page_thinking_budget))
                 },
