@@ -25,6 +25,7 @@ private const val PREFS = "github_connector"
 private const val TOKEN = "encrypted_token"
 private const val IV = "token_iv"
 private const val USER = "account_login"
+private const val CLIENT_ID = "oauth_client_id"
 private val JSON_MEDIA = "application/vnd.github+json".toMediaType()
 
 @Serializable
@@ -51,7 +52,9 @@ class GitHubConnector(
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     fun isConnected(): Boolean = prefs.contains(TOKEN)
     fun connectedAccount(): String? = prefs.getString(USER, null)
-    fun disconnect() = prefs.edit().clear().apply()
+    fun oauthClientId(): String = prefs.getString(CLIENT_ID, "").orEmpty()
+    fun saveOauthClientId(clientId: String) { prefs.edit().putString(CLIENT_ID, clientId.trim()).apply() }
+    fun disconnect() = prefs.edit().remove(TOKEN).remove(IV).remove(USER).apply()
 
     fun saveToken(token: String, accountLogin: String? = null) {
         require(token.isNotBlank())

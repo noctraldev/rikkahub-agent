@@ -1,6 +1,8 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -47,6 +50,8 @@ import me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
 import me.rerere.rikkahub.data.ai.tools.local.TermuxIntegration
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.telegram.TelegramBotPreferences
+import me.rerere.rikkahub.github.GitHubConnector
+import me.rerere.rikkahub.github.GitHubDeviceCode
 import me.rerere.rikkahub.shizuku.ShizukuManager
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
@@ -129,6 +134,7 @@ private fun AssistantLocalToolContent(
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
     val telegramBotPreferences = koinInject<TelegramBotPreferences>()
+    val githubConnector = koinInject<GitHubConnector>()
     // Hardware-availability gate for the NFC toggle: a device with no NFC chip can never
     // run the nfc tools, so the toggle is shown disabled with a "no NFC hardware" subtitle
     // rather than letting the user enable a tool that would only ever error.
@@ -160,10 +166,74 @@ private fun AssistantLocalToolContent(
     var cronToastShownThisVisit by remember { mutableStateOf(false) }
     var workflowsDialogShownThisVisit by remember { mutableStateOf(false) }
     var keyboardDialogShownThisVisit by remember { mutableStateOf(false) }
+    var showGithubDialog by remember { mutableStateOf(false) }
+    var githubClientId by remember { mutableStateOf(githubConnector.oauthClientId()) }
+    var githubDeviceCode by remember { mutableStateOf<GitHubDeviceCode?>(null) }
+    var githubBusy by remember { mutableStateOf(false) }
+    var githubError by remember { mutableStateOf<String?>(null) }
 
     val cronHintText = stringResource(R.string.assistant_page_local_tools_cron_jobs_toast_hint)
     val termuxCommand = stringResource(R.string.assistant_page_local_tools_termux_postgrant_command)
     val termuxCopiedText = stringResource(R.string.assistant_page_local_tools_termux_postgrant_copied)
+
+    if (showGithubDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!githubBusy) showGithubDialog = false },
+            title = { Text(stringResource(R.string.assistant_page_local_tools_github_connect_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (githubConnector.isConnected()) {
+                        Text(stringResource(R.string.assistant_page_local_tools_github_connected, githubConnector.connectedAccount().orEmpty()))
+                    } else {
+                        Text(stringResource(R.string.assistant_page_local_tools_github_connect_message))
+                        OutlinedTextField(
+                            value = githubClientId,
+                            onValueChange = { githubClientId = it },
+                            label = { Text(stringResource(R.string.assistant_page_local_tools_github_client_id)) },
+                            singleLine = true,
+                        )
+                    }
+                    githubDeviceCode?.let { device ->
+                        Text(stringResource(R.string.assistant_page_local_tools_github_user_code, device.userCode))
+                        TextButton(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(device.verificationUri))) }) {
+                            Text(stringResource(R.string.assistant_page_local_tools_github_open_verification))
+                        }
+                    }
+                    githubError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !githubBusy, onClick = {
+                    if (githubConnector.isConnected()) {
+                        githubConnector.disconnect()
+                        githubDeviceCode = null
+                        showGithubDialog = false
+                    } else {
+                        scope.launch {
+                            githubBusy = true
+                            githubError = null
+                            try {
+                                githubConnector.saveOauthClientId(githubClientId)
+                                val device = githubConnector.beginDeviceFlow(githubClientId)
+                                githubDeviceCode = device
+                                githubConnector.pollDeviceFlow(githubClientId, device)
+                            } catch (t: Throwable) {
+                                githubError = t.message ?: t::class.simpleName.orEmpty()
+                            }
+                            githubBusy = false
+                        }
+                    }
+                }) {
+                    Text(if (githubConnector.isConnected()) stringResource(R.string.assistant_page_local_tools_github_disconnect) else stringResource(R.string.assistant_page_local_tools_github_connect))
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !githubBusy, onClick = { showGithubDialog = false }) {
+                    Text(stringResource(R.string.assistant_page_local_tools_dialog_dismiss))
+                }
+            },
+        )
+    }
 
     if (showTermuxPostGrantDialog) {
         AlertDialog(
@@ -895,11 +965,16 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = { Text(stringResource(R.string.assistant_page_local_tools_github_title)) },
-                supportingContent = { Text(stringResource(R.string.assistant_page_local_tools_github_desc)) },
+                supportingContent = {
+                    Text(if (githubConnector.isConnected()) stringResource(R.string.assistant_page_local_tools_github_connected, githubConnector.connectedAccount().orEmpty()) else stringResource(R.string.assistant_page_local_tools_github_desc))
+                },
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.GitHub),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.GitHub, it) }
+                        onCheckedChange = {
+                            toggleLocalTool(LocalToolOption.GitHub, it)
+                            if (it) showGithubDialog = true
+                        }
                     )
                 }
             )
