@@ -1394,12 +1394,24 @@ class ChatService(
                 settings = settings,
                 model = model,
                 processingStatus = session.processingStatus,
+                maxSteps = if (assistant.autonomousModeEnabled) {
+                    assistant.autonomousMaxSteps.coerceIn(1, 128)
+                } else {
+                    me.rerere.rikkahub.data.ai.limits.ToolRuntimeLimits.maxToolSteps
+                },
                 // Read once per call so the surface that wrote the addendum (Telegram bot,
                 // anything else) gets its runtime context into the system prompt without
                 // having to plumb a parameter all the way through sendMessage. Returns null
                 // for in-app conversations that didn't register one.
-                systemAddendum = me.rerere.rikkahub.data.ai.tools
-                    .ConversationSystemAddendum.get(conversationId),
+                systemAddendum = listOfNotNull(
+                    me.rerere.rikkahub.data.ai.tools.ConversationSystemAddendum.get(conversationId),
+                    if (assistant.autonomousModeEnabled) {
+                        "Autonomous execution is enabled for this assistant. Work through the " +
+                            "bounded tool loop toward the user's objective; observe results, " +
+                            "adapt the plan, and stop when the objective is complete or blocked. " +
+                            "Never bypass approval for remote mutations."
+                    } else null
+                ).joinToString("\n" ).takeIf { it.isNotBlank() },
                 isToolAutoApproved = { toolName ->
                     // YOLO mode ("I AM STUPID" toggle in Settings → Tool approvals): every
                     // tool auto-approves. User opted into this explicitly. HARDLINE still

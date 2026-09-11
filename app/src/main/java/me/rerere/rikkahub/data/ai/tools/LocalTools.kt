@@ -121,6 +121,7 @@ import me.rerere.rikkahub.data.ai.tools.local.batchMoveTool
 import me.rerere.rikkahub.data.ai.tools.local.batchDeleteTool
 import me.rerere.rikkahub.data.ai.tools.local.webFetchTool
 import me.rerere.rikkahub.data.ai.tools.local.webExtractTool
+import me.rerere.rikkahub.data.ai.tools.local.githubTools
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.utils.readClipboardText
@@ -188,6 +189,7 @@ sealed class LocalToolOption {
     @Serializable @SerialName("mcp_control")         data object McpControl         : LocalToolOption()
     @Serializable @SerialName("external_automation") data object ExternalAutomation : LocalToolOption()
     @Serializable @SerialName("reliability")         data object Reliability        : LocalToolOption()
+    @Serializable @SerialName("github")              data object GitHub             : LocalToolOption()
     @Serializable @SerialName("sub_agents")          data object SubAgents          : LocalToolOption()
     @Serializable @SerialName("cost_guards")         data object CostGuards         : LocalToolOption()
     @Serializable @SerialName("workflows")           data object Workflows          : LocalToolOption()
@@ -343,6 +345,7 @@ class LocalTools(
     private val mcpManager: me.rerere.rikkahub.data.ai.mcp.McpManager,
     private val externalAutomationConfig: me.rerere.rikkahub.automation.ExternalAutomationConfig,
     private val gitHubReleaseChecker: me.rerere.rikkahub.reliability.GitHubReleaseChecker,
+    private val gitHubConnector: me.rerere.rikkahub.github.GitHubConnector,
     private val bugReportBuilder: me.rerere.rikkahub.reliability.BugReportBuilder,
     private val subAgentEngine: me.rerere.rikkahub.subagent.SubAgentEngine,
     private val subAgentRegistry: me.rerere.rikkahub.subagent.SubAgentRegistry,
@@ -942,6 +945,9 @@ class LocalTools(
         if (options.contains(LocalToolOption.Reliability)) {
             tools.add(me.rerere.rikkahub.reliability.checkAppUpdatesTool(gitHubReleaseChecker))
             tools.add(me.rerere.rikkahub.reliability.generateBugReportTool(context, bugReportBuilder))
+        }
+        if (options.contains(LocalToolOption.GitHub)) {
+            tools.addAll(githubTools(gitHubConnector))
         }
         if (options.contains(LocalToolOption.SubAgents)) {
             // Pass the caller context so the recursion guard inside SubAgentEngine.dispatch

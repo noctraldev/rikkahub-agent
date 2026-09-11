@@ -1366,6 +1366,16 @@
   <string name="assistant_page_local_tools_external_automation_desc">Let the assistant manage the External Automation Intent API — the path that lets Tasker / MacroDroid / Locale / ADB fire RUN_TASK intents at the assistant. Defaults to OFF; the assistant can flip it on, add trusted caller packages, and audit the recent invocation log.</string>
   <string name="assistant_page_local_tools_reliability_title">Reliability</string>
   <string name="assistant_page_local_tools_reliability_desc">Let the assistant check GitHub for newer releases and build a redacted bug-report ZIP on demand. The bug report includes the last few thousand logcat lines (with secrets redacted) and the app version + device info — and explicitly excludes your conversations, tokens, and saved hosts.</string>
+  <string name="assistant_page_local_tools_github_title">GitHub connector</string>
+  <string name="assistant_page_local_tools_github_desc">Connect an authorized GitHub account for repository browsing, code search, Actions status, branches, files, issues, and pull requests. Remote changes remain approval-gated.</string>
+  <string name="assistant_page_local_tools_github_connect_title">Connect GitHub</string>
+  <string name="assistant_page_local_tools_github_connect_message">Enter the Client ID of a GitHub OAuth App configured for device authorization. RikkaHub never asks for or stores your GitHub password.</string>
+  <string name="assistant_page_local_tools_github_client_id">OAuth App Client ID</string>
+  <string name="assistant_page_local_tools_github_connect">Start GitHub sign-in</string>
+  <string name="assistant_page_local_tools_github_disconnect">Disconnect account</string>
+  <string name="assistant_page_local_tools_github_connected">Connected as %1$s</string>
+  <string name="assistant_page_local_tools_github_user_code">GitHub code: %1$s</string>
+  <string name="assistant_page_local_tools_github_open_verification">Open GitHub verification page</string>
   <string name="assistant_page_local_tools_sub_agents_title">Sub-agents</string>
   <string name="assistant_page_local_tools_sub_agents_desc">Let the assistant dispatch focused sub-tasks (research, multi-step work) as independent LLM runs in the background. Each run is approval-gated, capped (default 3 concurrent per assistant, 16 global), and HARDLINE still applies inside.</string>
   <string name="assistant_page_local_tools_cost_guards_title">Cost guards</string>
@@ -1434,6 +1444,8 @@
   <string name="setting_page_notifications_action_ago_hours">%1$dh ago</string>
   <string name="assistant_page_fast_path_router">Fast-path router</string>
   <string name="assistant_page_fast_path_router_desc">Skip the LLM for high-confidence requests like \"what\'s my battery\", \"what time is it\", or \"list workflows\". The matching tool runs directly and you get an instant answer. Conservative — anything ambiguous still goes to the model. Logged to logcat (tag: FastPathRouter).</string>
+  <string name="assistant_page_autonomous_mode">Autonomous execution</string>
+  <string name="assistant_page_autonomous_mode_desc">Continue one request through bounded tool steps without manually pressing continue. Remote mutations still require approval.</string>
   <string name="assistant_page_local_tools_skill_import_title">Skill import</string>
   <string name="assistant_page_local_tools_skill_import_desc">Let the assistant install skills from a URL OR from text it already has (e.g. fetched via SSH / curl / MCP for authenticated servers). Native, openclaw, and Hermes formats. Per-call approval required for every install (Always Allow is disabled — you review the source each time).</string>
   <string name="assistant_page_local_tools_js_skills_title">JS skills</string>
