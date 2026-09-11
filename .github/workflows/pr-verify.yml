@@ -1,0 +1,52 @@
+name: PR verification
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+      - name: Install web UI dependencies
+        working-directory: web-ui
+        run: pnpm install --frozen-lockfile
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+      - name: Verify source formatting
+        run: git diff --check
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Android lint
+        run: ./gradlew :app:lintDebug --no-daemon
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon

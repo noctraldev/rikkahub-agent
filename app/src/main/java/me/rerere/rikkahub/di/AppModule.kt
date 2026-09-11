@@ -98,6 +98,7 @@ val appModule = module {
     // Phase 14: Reliability bundle
     single { me.rerere.rikkahub.reliability.GitHubReleaseChecker(get()) }
     single { me.rerere.rikkahub.reliability.BugReportBuilder(get()) }
+    single { me.rerere.rikkahub.github.GitHubConnector(get(), get()) }
 
     // Phase 11: Sub-agents
     single { me.rerere.rikkahub.subagent.SubAgentRegistry() }
@@ -186,6 +187,7 @@ val appModule = module {
             externalAutomationConfig = get(),
             gitHubReleaseChecker = get(),
             bugReportBuilder = get(),
+            gitHubConnector = get(),
             subAgentEngine = get(),
             subAgentRegistry = get(),
             conversationRepo = get(),
